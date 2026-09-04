@@ -1,0 +1,25 @@
+# Descriptor de bloque de Forte Foundation.
+# Copiar esta carpeta a blocks/<id>/ y rellenar. Se valida contra spec/schemas/block.schema.json.
+# Campos explicados en spec/block.md.
+
+id: example-block
+name: Example Block
+version: 0.1.0
+family: patterns
+kind: [docs, template]
+status: draft
+description: Descripción de una frase de la capacidad que resuelve el bloque y para quién.
+variant: core
+# extends: <id del bloque base si esto es una variante vertical o regional>
+requires: {}
+provides: []
+# providers: []            # solo bloques de abstracción de provider
+decision_mode: deterministic
+default_for: on-demand
+origin:
+  product: forte-mission-control
+  date: "2026-09-04"
+  notes: Dónde y por qué se resolvió por primera vez.
+integration: integration.md
+tests: tests/README.md
+owners: []

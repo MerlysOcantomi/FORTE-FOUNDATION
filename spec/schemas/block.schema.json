@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MerlysOcantomi/FORTE-FOUNDATION/spec/schemas/block.schema.json",
+  "title": "Forte Foundation block descriptor (block.yaml)",
+  "description": "Describe un bloque de Foundation: identidad, versión, familia, estado, variantes, compatibilidad y procedencia. Ver spec/block.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "version", "family", "kind", "status", "description", "variant", "decision_mode", "default_for"],
+  "properties": {
+    "id": { "$ref": "#/$defs/blockId" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "$ref": "#/$defs/semver" },
+    "family": { "$ref": "#/$defs/family" },
+    "kind": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/kind" }
+    },
+    "status": { "$ref": "#/$defs/status" },
+    "description": { "type": "string", "minLength": 1 },
+    "variant": { "$ref": "#/$defs/variant" },
+    "extends": {
+      "description": "Id del bloque base que esta variante especializa (vertical o regional).",
+      "$ref": "#/$defs/blockId"
+    },
+    "requires": {
+      "description": "Compatibilidad: id de bloque -> rango semver requerido.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/blockId" },
+      "additionalProperties": { "$ref": "#/$defs/semverRange" }
+    },
+    "provides": {
+      "description": "Capacidades, contratos o interfaces que el bloque aporta al producto.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "providers": {
+      "description": "Solo para bloques de abstracción de provider: adapters disponibles.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "decision_mode": { "$ref": "#/$defs/decisionMode" },
+    "default_for": { "$ref": "#/$defs/defaultFor" },
+    "origin": { "$ref": "#/$defs/origin" },
+    "integration": {
+      "description": "Ruta relativa al documento de integración del bloque.",
+      "type": "string",
+      "minLength": 1
+    },
+    "tests": {
+      "description": "Ruta relativa a los tests o a la descripción de cómo se prueba el bloque de forma independiente.",
+      "type": "string",
+      "minLength": 1
+    },
+    "owners": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "blockId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "description": "Identificador kebab-case en inglés, p. ej. auth, region-es-invoicing."
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "semverRange": {
+      "type": "string",
+      "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?)*$",
+      "description": "Rango semver sencillo: >=2, ^3.1, ~1.4, >=2 <4, 2.x"
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "core",
+        "capabilities",
+        "providers",
+        "patterns",
+        "operational-safety",
+        "persistence",
+        "platform",
+        "regions",
+        "templates",
+        "testing"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "code",
+        "contract",
+        "pattern",
+        "schema",
+        "template",
+        "test",
+        "policy",
+        "config",
+        "docs",
+        "migration",
+        "generator",
+        "integration-guide"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["candidate", "draft", "stable", "deprecated"]
+    },
+    "variant": {
+      "type": "string",
+      "pattern": "^(core|vertical:[a-z][a-z0-9-]*|region:[a-z]{2}(-[a-z0-9]+)*|region:global|region:eu)$",
+      "description": "core | vertical:<nombre> | region:<código ISO 3166-1 alpha-2 en minúsculas> | region:global | region:eu"
+    },
+    "decisionMode": {
+      "type": "string",
+      "enum": ["deterministic", "ai", "mixed"],
+      "description": "deterministic: invariantes verificables por código; ai: selección/interpretación por LLM; mixed: la IA decide, el código verifica."
+    },
+    "defaultFor": {
+      "type": "string",
+      "enum": ["all-products", "on-demand"],
+      "description": "all-products: Mission Control lo incluye por defecto en todo producto serio (p. ej. ci). on-demand: solo cuando el perfil del producto lo requiere."
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product"],
+      "properties": {
+        "product": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Producto donde se resolvió por primera vez la capacidad (p. ej. forte-mission-control) o 'handoff' si solo se identificó conceptualmente."
+        },
+        "date": { "type": "string", "format": "date" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

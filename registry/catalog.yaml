@@ -1,0 +1,576 @@
+# Forte Foundation — catálogo de bloques
+#
+# Este archivo es la fuente vigente de qué bloques conoce Foundation y en qué estado están.
+# Se valida contra spec/schemas/catalog.schema.json. Formato explicado en spec/catalog.md.
+#
+# Estado inicial: TODOS los bloques son `candidate`. Ninguno tiene implementación en blocks/.
+# Un bloque pasa a `draft` solo cuando un producto real lo necesita y se extrae con evidencia
+# (ver docs/06-criterios-de-admision.md). El primer bloque previsto es `ci` (ADR-0007).
+#
+# Identificadores en inglés, kebab-case. Prosa en español.
+
+catalog_version: 1
+updated_at: "2026-09-04"
+
+families:
+  core:
+    description: Primitivas de identidad y multi-tenancy que casi todo producto necesita (auth, workspace, roles, permisos, aislamiento).
+  capabilities:
+    description: Capacidades de dominio generalizables (calendario, citas, clientes, notificaciones, billing...). Pueden tener variantes vertical y regional.
+  providers:
+    description: Abstracciones de proveedor con contrato, errores, tests y adapters intercambiables (email, storage, IA, WhatsApp...).
+  patterns:
+    description: Patrones arquitectónicos documentados y probados que se copian como guía o esqueleto, no como librería.
+  operational-safety:
+    description: Red de seguridad operativa (CI, recovery, retry, idempotencia, scheduler, health, observabilidad, backups, migraciones seguras).
+  persistence:
+    description: Scaffolds y patrones de persistencia. Cada producto conserva su propia base de datos; aquí solo vive lo reutilizable.
+  platform:
+    description: Capacidades de plataforma para construir y operar productos (secretos, entornos, configuración).
+  regions:
+    description: Capas regionales por país/mercado (pagos, facturación, fiscalidad, formatos, providers locales). Separadas del idioma.
+  templates:
+    description: Scaffolds de producto o de repositorio que combinan bloques en un punto de partida.
+  testing:
+    description: Utilidades y patrones de testing reutilizables entre productos.
+
+blocks:
+  # ── core ──────────────────────────────────────────────────────────────────
+  - id: auth
+    name: Auth
+    family: core
+    status: candidate
+    variant: core
+    description: Autenticación de usuarios (sesiones, OAuth, recuperación de acceso) con contrato estable para que el producto elija proveedor.
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [2, 16, 31, 33, 44]
+
+  - id: workspace
+    name: Workspace
+    family: core
+    status: candidate
+    variant: core
+    description: Unidad multi-tenant básica. Todo dato de producto pertenece a un workspace.
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: 7f, notes: Concepto central de 7F. }
+    handoff_sections: [25, 31, 34, 44]
+
+  - id: membership-roles
+    name: Membership & Roles
+    family: core
+    status: candidate
+    variant: core
+    description: Pertenencia de usuarios a workspaces y roles base (OWNER, ADMIN, MEMBER, VIEWER). El producto puede especializar roles.
+    requires: { workspace: ">=1" }
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: 7f }
+    handoff_sections: [25]
+
+  - id: permissions
+    name: Permissions
+    family: core
+    status: candidate
+    variant: core
+    description: Evaluación determinista de permisos sobre recursos del workspace. Nunca decidido por IA.
+    requires: { workspace: ">=1", membership-roles: ">=1" }
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [5, 18, 25, 44]
+
+  - id: tenant-isolation
+    name: Tenant Isolation
+    family: core
+    status: candidate
+    variant: core
+    description: Invariantes y tests que garantizan que ningún dato cruza workspaces (queries, storage, jobs).
+    requires: { workspace: ">=1" }
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [24, 25]
+
+  # ── capabilities ──────────────────────────────────────────────────────────
+  - id: calendar
+    name: Calendar Engine
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Motor de calendario (disponibilidad, franjas, zonas horarias) independiente de la experiencia de usuario.
+    requires: { workspace: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [8, 12, 14, 31, 44]
+
+  - id: appointments
+    name: Appointment Engine
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Ciclo de vida de citas (crear, mover, cancelar, no-show) con estados explícitos. Núcleo global sin semántica de sector.
+    requires: { workspace: ">=1", calendar: ">=1", notifications: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse, notes: Primer consumidor previsto. }
+    handoff_sections: [8, 14, 34, 36]
+
+  - id: appointments-beauty
+    name: Appointments (Beauty)
+    family: capabilities
+    status: candidate
+    variant: vertical:beauty
+    extends: appointments
+    description: Adapter sectorial de citas para Beauty (servicios, duración por servicio, profesional asignado, rebooking).
+    requires: { appointments: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [14, 36]
+
+  - id: appointments-es
+    name: Appointments (España)
+    family: capabilities
+    status: candidate
+    variant: region:es
+    extends: appointments
+    description: Adapter regional de citas para España (formatos, festivos, comunicación local). Ejemplo de composición core + vertical + región.
+    requires: { appointments: ">=1", region-es: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [36]
+
+  - id: customer-records
+    name: Customer Records
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Fichas de cliente (datos, notas, historial, consentimiento) con aislamiento por workspace.
+    requires: { workspace: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [5, 8, 14]
+
+  - id: notifications
+    name: Notifications
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Envío de notificaciones multicanal sobre abstracciones de provider, con trazabilidad y reintentos.
+    requires: { workspace: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [5, 14, 16, 34]
+
+  - id: reminders
+    name: Reminder Engine
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Programación y envío de recordatorios (citas, pagos) de forma durable e idempotente.
+    requires: { notifications: ">=1", scheduler: ">=1", idempotency: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [5, 8, 14, 29]
+
+  - id: billing
+    name: Billing
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Facturación base (documentos, numeración, impuestos) sin reglas de país. Las reglas legales llegan por bloques regionales.
+    requires: { workspace: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [16, 19, 34]
+
+  - id: subscriptions
+    name: Subscriptions
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Planes, suscripciones y entitlements del workspace (qué tiene contratado cada cliente).
+    requires: { workspace: ">=1", billing: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: skina }
+    handoff_sections: [11, 16]
+
+  - id: customer-portal
+    name: Customer Portal
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Portal de cliente final (acceso, documentos, suscripción). Identificado para SKINA.
+    requires: { auth: ">=1", subscriptions: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: skina }
+    handoff_sections: [16]
+
+  - id: integrations
+    name: Integrations
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Marco para integraciones externas (webhooks entrantes/salientes, sincronizaciones) con estado durable.
+    requires: { workspace: ">=1", idempotency: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [29, 44]
+
+  - id: audit
+    name: Audit Log
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Registro auditable de acciones relevantes (quién, qué, cuándo) por workspace.
+    requires: { workspace: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [5, 42]
+
+  - id: analytics
+    name: Analytics
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Eventos de producto y métricas básicas, sin acoplar a un proveedor concreto.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: skina }
+    handoff_sections: [16]
+
+  - id: recurring-jobs
+    name: Recurring Jobs
+    family: capabilities
+    status: candidate
+    variant: core
+    description: Trabajos recurrentes de dominio (p. ej. seguimiento post-cita) construidos sobre scheduler + idempotency.
+    requires: { scheduler: ">=1", idempotency: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [8]
+
+  # ── providers ─────────────────────────────────────────────────────────────
+  - id: email-provider
+    name: EmailProvider
+    family: providers
+    status: candidate
+    variant: core
+    description: Contrato, errores, tests y adapters para envío de email.
+    providers: [resend, sendgrid]
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [22]
+
+  - id: storage-provider
+    name: StorageProvider
+    family: providers
+    status: candidate
+    variant: core
+    description: Contrato y adapters para almacenamiento de archivos.
+    providers: [vercel-blob, s3]
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [22]
+
+  - id: ai-provider
+    name: AIProvider
+    family: providers
+    status: candidate
+    variant: core
+    description: Contrato y adapters para modelos de IA (texto, transcripción) con manejo uniforme de errores y límites.
+    providers: [anthropic, openai]
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [7, 22]
+
+  - id: whatsapp-provider
+    name: WhatsAppProvider
+    family: providers
+    status: candidate
+    variant: core
+    description: Contrato y adapters para mensajería WhatsApp (envío, plantillas, webhooks de estado).
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [5, 12, 14]
+
+  - id: calendar-provider
+    name: CalendarProvider
+    family: providers
+    status: candidate
+    variant: core
+    description: Contrato y adapters para calendarios externos (Google, Microsoft) usado por calendar y appointments.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [8]
+
+  # ── operational-safety ────────────────────────────────────────────────────
+  - id: ci
+    name: Continuous Integration
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: "Plantilla de CI adaptable al stack: en cada PR ejecuta install → lint → typecheck → build → tests. Impide que código roto llegue a main."
+    default_for: all-products
+    decision_mode: deterministic
+    origin:
+      product: forte-mission-control
+      notes: Identificado a raíz de la experiencia con Mission Control. Primer bloque real previsto (ADR-0007).
+    handoff_sections: [26, 28]
+
+  - id: recovery
+    name: Recovery
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Detectar operaciones interrumpidas y continuar/reconciliar su estado sin duplicar trabajo. No es backup.
+    requires: { idempotency: ">=1", retry: ">=1", scheduler: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin:
+      product: forte-mission-control
+      notes: Resuelto en Forte MC (leases, estados explícitos, reconciliación).
+    handoff_sections: [7, 27, 28, 29, 30]
+
+  - id: retry
+    name: Retry
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Política de reintentos con backoff y clasificación de errores transitorios vs permanentes.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [7, 27, 28]
+
+  - id: idempotency
+    name: Idempotency
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Claves de idempotencia y registro de operaciones para que reejecutar nunca duplique efectos.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [7, 18, 27, 28]
+
+  - id: scheduler
+    name: Scheduler / Cron
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Ejecución programada y durable de trabajos con leases y control de concurrencia.
+    requires: { idempotency: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [7, 27, 28]
+
+  - id: health-checks
+    name: Health Checks
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Endpoints y comprobaciones de salud (app, base de datos, providers) para despliegue y monitorización.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [28]
+
+  - id: error-reporting
+    name: Error Reporting
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Captura y reporte de errores con contexto (workspace, operación) sin exponer secretos.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [23, 28]
+
+  - id: backups
+    name: Backups
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Política y automatización de copias de seguridad y restauración verificada.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [24, 28]
+
+  - id: migration-safety
+    name: Migration Safety
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Reglas y comprobaciones para migraciones de esquema seguras (expand/contract, rollback, datos existentes).
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [18, 24, 28]
+
+  - id: observability
+    name: Observability
+    family: operational-safety
+    status: candidate
+    variant: core
+    description: Logs estructurados, métricas y trazas con convenciones comunes entre productos.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [28]
+
+  # ── persistence ───────────────────────────────────────────────────────────
+  - id: postgres-setup
+    name: Postgres Setup
+    family: persistence
+    status: candidate
+    variant: core
+    description: Scaffold de PostgreSQL por producto (conexión, pooling, entornos). Dirección actual del ecosistema hacia Neon + PostgreSQL, sin acoplar el bloque a un proveedor.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: 7f }
+    handoff_sections: [24]
+
+  - id: prisma-setup
+    name: Prisma Setup
+    family: persistence
+    status: candidate
+    variant: core
+    description: Scaffold de Prisma (schema base, cliente, convenciones de migraciones).
+    requires: { postgres-setup: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: 7f }
+    handoff_sections: [24]
+
+  - id: seed-patterns
+    name: Seed Patterns
+    family: persistence
+    status: candidate
+    variant: core
+    description: Patrones de datos semilla por entorno (dev, preview, test) reproducibles.
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [24]
+
+  - id: backup-restore
+    name: Backup / Restore (DB)
+    family: persistence
+    status: candidate
+    variant: core
+    description: Procedimiento y scripts de copia y restauración de la base de datos del producto.
+    requires: { postgres-setup: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [24]
+
+  - id: workspace-isolation
+    name: Workspace Isolation (DB)
+    family: persistence
+    status: candidate
+    variant: core
+    description: Patrón de aislamiento por workspace a nivel de esquema y consultas, con tests de fuga.
+    requires: { workspace: ">=1", tenant-isolation: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [24, 25]
+
+  # ── platform ──────────────────────────────────────────────────────────────
+  - id: secrets-env-management
+    name: Secrets & Environments
+    family: platform
+    status: candidate
+    variant: core
+    description: Gestión segura de secretos y configuración por entorno (development, preview, production) con permisos y trazabilidad. Los secretos nunca acaban en prompts, commits ni logs.
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: forte-mission-control }
+    handoff_sections: [23, 44]
+
+  # ── regions ───────────────────────────────────────────────────────────────
+  - id: region-global
+    name: Region Global
+    family: regions
+    status: candidate
+    variant: region:global
+    description: Capa regional base (formatos neutros, moneda configurable). Punto de partida de toda capa regional.
+    default_for: all-products
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [19, 20]
+
+  - id: region-eu
+    name: Region EU
+    family: regions
+    status: candidate
+    variant: region:eu
+    extends: region-global
+    description: Capa europea (consentimiento, retención de datos, requisitos comunes de la UE).
+    requires: { region-global: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [19, 20]
+
+  - id: region-es
+    name: Region España
+    family: regions
+    status: candidate
+    variant: region:es
+    extends: region-eu
+    description: Capa España (formatos de fecha, teléfono y dirección, EUR, providers locales).
+    requires: { region-eu: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [5, 19, 20]
+
+  - id: region-es-invoicing
+    name: Facturación España
+    family: regions
+    status: candidate
+    variant: region:es
+    extends: region-es
+    description: Reglas de facturación españolas (numeración, IVA, requisitos legales) sobre el bloque billing.
+    requires: { region-es: ">=1", billing: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: finesse }
+    handoff_sections: [2, 19, 31, 34]
+
+  - id: region-ch
+    name: Region Suiza
+    family: regions
+    status: candidate
+    variant: region:ch
+    extends: region-global
+    description: Capa Suiza (CHF, formatos, providers locales). Ejemplo de que un mercado no-UE no altera el bloque global.
+    requires: { region-global: ">=1" }
+    default_for: on-demand
+    decision_mode: deterministic
+    origin: { product: handoff }
+    handoff_sections: [19, 20]

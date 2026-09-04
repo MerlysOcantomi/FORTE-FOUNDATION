@@ -1,0 +1,81 @@
+# Ejemplo ILUSTRATIVO de foundation.manifest para Finesse (España).
+#
+# Este archivo NO describe el estado real de Finesse: ningún bloque del catálogo está implementado
+# todavía, así que las versiones y commits son ficticios. Sirve para fijar el formato que Mission
+# Control leerá en cada producto y para mostrar la selección del handoff (§5, §14, §20).
+# Se valida contra spec/schemas/manifest.schema.json.
+
+manifest_version: 1
+product: finesse
+repo: MerlysOcantomi/FINESSE
+
+profile:
+  type: vertical
+  platform: 7f
+  vertical: beauty
+  market: ES
+  locale: es-ES
+  currency: EUR
+
+foundation:
+  repo: MerlysOcantomi/FORTE-FOUNDATION
+  catalog_commit: "0000000000000000000000000000000000000000"
+
+blocks:
+  - id: ci
+    version: 1.0.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+    path: .github/workflows/ci.yml
+
+  - id: auth
+    version: 3.2.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+
+  - id: workspace
+    version: 2.1.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+
+  - id: appointments
+    version: 2.4.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+
+  - id: appointments-beauty
+    version: 1.0.0
+    variant: vertical:beauty
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: true
+    notes: Finesse añadió el flujo "Próxima clienta" sobre el adapter. Un upgrade requiere revisión manual.
+
+  - id: reminders
+    version: 1.2.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+
+  - id: whatsapp-provider
+    version: 1.0.0
+    variant: core
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
+
+  - id: region-es-invoicing
+    version: 1.3.0
+    variant: region:es
+    copied_at: "2026-09-04"
+    source_commit: "0000000"
+    customized: false
