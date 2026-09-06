@@ -31,10 +31,10 @@ Solo existe carpeta cuando el bloque tiene implementación (`status` distinto de
 | `version` | sí | Semver `MAJOR.MINOR.PATCH`. Ver reglas abajo. |
 | `family` | sí | Una de: `core`, `capabilities`, `providers`, `patterns`, `operational-safety`, `persistence`, `platform`, `regions`, `templates`, `testing`. |
 | `kind` | sí | Lista de tipos de contenido: `code`, `contract`, `pattern`, `schema`, `template`, `test`, `policy`, `config`, `docs`, `migration`, `generator`, `integration-guide`. |
-| `status` | sí | `candidate` → `draft` → `stable` → `deprecated`. Ver [catalog.md](catalog.md). |
+| `status` | sí | `draft`, `stable` o `deprecated`. Un `block.yaml` nunca es `candidate`: ese estado solo existe en el catálogo. Ver [catalog.md](catalog.md). |
 | `description` | sí | Una frase. |
 | `variant` | sí | `core`, `vertical:<nombre>`, `region:<código>`, `region:global` o `region:eu`. |
-| `extends` | si variante | Id del bloque base que esta variante especializa. |
+| `extends` | si variante | Id del bloque base que esta variante especializa. Obligatorio para toda `vertical:*` o `region:*` salvo `region:global`; prohibido en `core`. El schema lo exige. |
 | `requires` | no | Mapa `id → rango semver`. Compatibilidad entre bloques. |
 | `provides` | no | Capacidades o contratos que aporta. |
 | `providers` | no | Solo bloques de abstracción de provider: adapters disponibles. |
@@ -56,7 +56,17 @@ Semver aplicado al **contrato que el producto ve**, no a la implementación inte
 - `MINOR`: nueva capacidad compatible. Upgrade automático o asistido.
 - `MAJOR`: cambio de contrato, de schema o de invariantes. Upgrade asistido o manual, con migración documentada en el CHANGELOG.
 
-Cada entrada del CHANGELOG declara el tipo de upgrade (`automático`, `asistido`, `manual`). Mission Control usa esa etiqueta y el campo `customized` del manifest del producto para decidir si puede proponer el upgrade sin revisión humana.
+El schema liga versión y estado: `draft` exige `0.x`; `stable` exige `>=1.0.0`.
+
+Cada entrada del CHANGELOG declara el tipo de upgrade. Ninguno de los tres elimina el PR ni la revisión humana en el producto ([ADR-0005](../docs/decisions/ADR-0005-versionado-semver-y-manifest.md)); lo que cambia es cuánto puede preparar Mission Control por su cuenta:
+
+| Tipo | Qué puede hacer Mission Control solo | Qué sigue siendo humano |
+|------|--------------------------------------|-------------------------|
+| `automático` | Preparar, aplicar y validar el cambio en una rama y abrir el PR. | Revisar y fusionar. |
+| `asistido` | Preparar la rama siguiendo la migración documentada; puede necesitar decisiones del producto. | Completar la migración donde se indique, revisar y fusionar. |
+| `manual` | Detectar la versión nueva y abrir un PR de aviso con el diff del CHANGELOG. | Aplicar el cambio, revisar y fusionar. |
+
+`customized: true` en el manifest del producto convierte cualquier tipo en `manual`.
 
 ## Variantes y composición
 
@@ -68,7 +78,7 @@ appointments-beauty     variant: vertical:beauty   extends: appointments
 appointments-es         variant: region:es         extends: appointments
 ```
 
-El producto combina `core + vertical + región + UX propia`. Una variante nunca sustituye al core: lo requiere.
+El producto combina `core + vertical + región + UX propia`. Una variante nunca sustituye al core: lo requiere. Toda variante declara `extends` (el schema lo obliga; `region:global` es la única raíz sin base) y, además, lista su base en `requires`.
 
 ## `decision_mode`
 
@@ -82,8 +92,10 @@ La selección **de** bloques es tarea de Mission Control (IA); los invariantes *
 
 ## `default_for`
 
-- `all-products`: Mission Control lo incluye por defecto en todo producto serio salvo que se excluya explícitamente (p. ej. `ci`, `auth`, `workspace`).
+- `all-products`: cuando el bloque tiene una versión copiable (`draft` o `stable`), Mission Control lo incluye por defecto en todo producto serio salvo exclusión explícita (p. ej. `ci`, `auth`, `workspace`).
 - `on-demand`: solo cuando el perfil del producto lo requiere (p. ej. `recovery`, `region-ch`).
+
+`default_for` describe el perfil por defecto, no una orden de instalación: un bloque `candidate` con `default_for: all-products` significa "cuando exista, formará parte del perfil por defecto", y hasta entonces Mission Control solo puede recomendarlo o señalar la necesidad ([`spec/catalog.md`](catalog.md#qué-puede-hacer-mission-control-con-cada-estado)).
 
 ## Invariantes que todo bloque debe cumplir
 

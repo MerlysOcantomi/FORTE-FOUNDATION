@@ -28,8 +28,8 @@ Forte Foundation                Mission Control                 Producto
 Quien usa Foundation es **Mission Control**, no una persona marcando módulos a mano:
 
 1. Infiere el perfil del producto (tipo, mercado, idioma, moneda, vertical).
-2. Lee [`registry/catalog.yaml`](registry/catalog.yaml) y selecciona bloques, versiones y variantes (vertical, región), incluidos los marcados `default_for: all-products`.
-3. Copia cada bloque siguiendo su `integration.md`, ejecuta sus tests y registra la entrada en el manifest del producto ([`spec/manifest.md`](spec/manifest.md)).
+2. Lee [`registry/catalog.yaml`](registry/catalog.yaml) y selecciona bloques, versiones y variantes (vertical, región), incluidos los marcados `default_for: all-products`. Solo los bloques `draft` o `stable` pueden copiarse; un `candidate` solo puede recomendarse ([`spec/catalog.md`](spec/catalog.md#qué-puede-hacer-mission-control-con-cada-estado)).
+3. Copia cada bloque y cada una de sus dependencias siguiendo su `integration.md`, ejecuta sus tests y registra todas las entradas en el manifest del producto ([`spec/manifest.md`](spec/manifest.md)).
 4. Explica la selección; Merlys revisa o corrige.
 
 Ejemplo de manifest resultante: [`examples/finesse-es.foundation.manifest.yaml`](examples/finesse-es.foundation.manifest.yaml).
@@ -51,6 +51,7 @@ spec/
   block.md · manifest.md · catalog.md    especificaciones (normativas)
   schemas/                     JSON Schemas de block.yaml, manifest y catálogo
 registry/catalog.yaml          inventario vigente de bloques y su estado
+scripts/validate.py            validación de schemas, catálogo, manifests y enlaces
 blocks/
   README.md                    vacío por diseño
   _template/                   plantilla de bloque
@@ -66,12 +67,23 @@ La autoridad sobre cómo funciona Foundation es, en este orden: [`docs/decisions
 - Visión, principios y ocho decisiones de arquitectura fijadas.
 - Formatos de bloque, manifest y catálogo especificados y validables por schema.
 - Catálogo con las capacidades candidatas identificadas, todas en estado `candidate`.
-- **Cero bloques implementados.** El primer bloque previsto es `ci` ([ADR-0007](docs/decisions/ADR-0007-ci-por-defecto-recovery-opcional.md)).
-- Sin tooling propio todavía. Hasta que exista, valida los YAML contra los schemas antes de abrir un PR (por ejemplo con Python `jsonschema` + `pyyaml`).
+- **Cero bloques implementados.** Mientras todo sea `candidate`, Mission Control no copia nada: el catálogo sirve para razonar y recomendar. El primer bloque previsto es `ci` ([ADR-0007](docs/decisions/ADR-0007-ci-por-defecto-recovery-opcional.md)).
+
+## Validación
+
+Obligatoria antes de abrir un PR. Comprueba los schemas y las reglas que JSON Schema no puede expresar (ids únicos, referencias, `extends`, dependency closure de los manifests, estado copiable, enlaces entre documentos):
+
+```bash
+pip install pyyaml jsonschema
+python3 scripts/validate.py                 # todo el repositorio
+python3 scripts/validate.py ruta/al/foundation.manifest.yaml   # un manifest de producto
+```
+
+Todavía no hay workflow de CI en este repositorio: será la primera copia real del bloque `ci` aplicada a Foundation mismo.
 
 ## Reglas de trabajo
 
-- Todo cambio entra por PR a `main` con revisión.
+- Todo cambio entra por PR a `main` con revisión y con `scripts/validate.py` en verde.
 - Identificadores en inglés (ids, campos, carpetas); prosa en español.
 - Fechas y hashes de commit siempre entre comillas en YAML.
 - Nunca secretos ni valores de configuración de un producto en este repositorio.

@@ -58,12 +58,14 @@ blocks:
 
 ## Reglas
 
-1. **Una entrada por bloque copiado**, incluidas las variantes (el core y su adapter son entradas separadas).
-2. `market` y `locale` son campos distintos a propósito ([ADR-0004](../docs/decisions/ADR-0004-region-separada-de-locale.md)).
-3. `customized: true` obliga a revisión humana en cualquier upgrade de ese bloque, sea cual sea el tipo declarado en el CHANGELOG.
-4. El manifest se actualiza en el mismo commit en que se copia o actualiza un bloque. Un bloque copiado sin entrada en el manifest es duplicación descontrolada (§37.B del handoff).
-5. El manifest no contiene secretos ni configuración de entorno.
-6. `manifest_version` permite evolucionar el formato; un cambio incompatible incrementa el número y se documenta en un ADR.
+1. **Una entrada por bloque copiado y un `id` único en todo el manifest**, incluidas las variantes (el core y su adapter son entradas separadas). Un producto no puede tener dos versiones del mismo bloque. JSON Schema no puede expresar la unicidad de un campo dentro de una lista; la comprueba `scripts/validate.py` y es normativa.
+2. **Dependency closure.** Si un bloque copiado declara `requires` o `extends`, cada uno de esos bloques tiene también su entrada, porque también se copió. Un manifest que registra `appointments` sin `calendar` y `notifications` está incompleto y pierde provenance. Lo comprueba `scripts/validate.py`.
+3. **Solo se copian bloques `draft` o `stable`.** Un `candidate` nunca aparece en un manifest; un `deprecated` solo permanece en manifests que ya lo tenían ([`spec/catalog.md`](catalog.md#qué-puede-hacer-mission-control-con-cada-estado)).
+4. `market` y `locale` son campos distintos a propósito ([ADR-0004](../docs/decisions/ADR-0004-region-separada-de-locale.md)).
+5. `customized: true` obliga a revisión humana en cualquier upgrade de ese bloque, sea cual sea el tipo declarado en el CHANGELOG.
+6. El manifest se actualiza en el mismo commit en que se copia o actualiza un bloque. Un bloque copiado sin entrada en el manifest es duplicación descontrolada (§37.B del handoff).
+7. El manifest no contiene secretos ni configuración de entorno.
+8. `manifest_version` permite evolucionar el formato; un cambio incompatible incrementa el número y se documenta en un ADR.
 
 ## Flujo de upgrade (resumen)
 
@@ -81,4 +83,4 @@ crea rama, aplica migración, ejecuta tests
 PR → revisión → aprobación → actualiza manifest
 ```
 
-Nunca se actualiza un producto sin PR ni sin actualizar su manifest.
+Nunca se actualiza un producto sin PR ni sin actualizar su manifest. Un upgrade `automático` significa que Mission Control puede preparar, aplicar y validar el cambio y abrir el PR sin intervención; la revisión y el merge siguen siendo humanos ([`spec/block.md`](block.md#versionado)).

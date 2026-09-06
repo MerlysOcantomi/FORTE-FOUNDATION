@@ -5,7 +5,13 @@
   "description": "Registro de procedencia que vive en el repo de cada producto: qué bloques de Foundation se copiaron, en qué versión y desde qué commit. Ver spec/manifest.md.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["manifest_version", "product", "repo", "profile", "blocks"],
+  "required": [
+    "manifest_version",
+    "product",
+    "repo",
+    "profile",
+    "blocks"
+  ],
   "properties": {
     "manifest_version": {
       "type": "integer",
@@ -22,21 +28,33 @@
       "minLength": 1,
       "description": "Repositorio del producto, p. ej. MerlysOcantomi/FINESSE."
     },
-    "profile": { "$ref": "#/$defs/profile" },
+    "profile": {
+      "$ref": "#/$defs/profile"
+    },
     "foundation": {
       "type": "object",
       "additionalProperties": false,
       "description": "Referencia al repositorio Foundation desde el que se copiaron los bloques.",
       "properties": {
-        "repo": { "type": "string", "minLength": 1 },
-        "catalog_commit": { "$ref": "#/$defs/commitSha" }
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "catalog_commit": {
+          "$ref": "#/$defs/commitSha"
+        }
       }
     },
     "blocks": {
       "type": "array",
-      "items": { "$ref": "#/$defs/blockEntry" }
+      "items": {
+        "$ref": "#/$defs/blockEntry"
+      },
+      "description": "Una entrada por bloque copiado. El id debe ser único dentro del manifest y toda dependencia declarada en requires por un bloque copiado debe tener su propia entrada (dependency closure). JSON Schema no puede expresar ninguna de las dos reglas: las comprueba scripts/validate.py y son normativas (spec/manifest.md)."
     },
-    "notes": { "type": "string" }
+    "notes": {
+      "type": "string"
+    }
   },
   "$defs": {
     "commitSha": {
@@ -45,17 +63,30 @@
     },
     "semver": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "SemVer 2.0.0 (expresión oficial de semver.org): sin ceros iniciales en identificadores numéricos de prerelease ni identificadores vacíos."
     },
     "profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "market", "locale", "currency"],
+      "required": [
+        "type",
+        "market",
+        "locale",
+        "currency"
+      ],
       "description": "Perfil del producto que Mission Control usa para inferir bloques y variantes (§5, §20 del handoff).",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["saas", "platform", "vertical", "internal-tool", "portal", "agent"]
+          "enum": [
+            "saas",
+            "platform",
+            "vertical",
+            "internal-tool",
+            "portal",
+            "agent"
+          ]
         },
         "market": {
           "type": "string",
@@ -87,13 +118,22 @@
     "blockEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "version", "variant", "copied_at", "source_commit", "customized"],
+      "required": [
+        "id",
+        "version",
+        "variant",
+        "copied_at",
+        "source_commit",
+        "customized"
+      ],
       "properties": {
         "id": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
         },
-        "version": { "$ref": "#/$defs/semver" },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
         "variant": {
           "type": "string",
           "pattern": "^(core|vertical:[a-z][a-z0-9-]*|region:[a-z]{2}(-[a-z0-9]+)*|region:global|region:eu)$"
@@ -116,7 +156,9 @@
           "minLength": 1,
           "description": "Ruta dentro del repo del producto donde vive la copia."
         },
-        "notes": { "type": "string" }
+        "notes": {
+          "type": "string"
+        }
       }
     }
   }

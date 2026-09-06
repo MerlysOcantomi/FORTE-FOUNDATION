@@ -14,7 +14,7 @@ workspace@2.1.0
 region-es-invoicing@1.4.0
 ```
 
-Reglas de incremento y tipos de upgrade (`automático`, `asistido`, `manual`) en [`spec/block.md`](../spec/block.md#versionado).
+Reglas de incremento y tipos de upgrade (`automático`, `asistido`, `manual`) en [`spec/block.md`](../spec/block.md#versionado). Los tres tipos describen cuánto puede preparar Mission Control por su cuenta; ninguno elimina el PR ni la revisión humana en el producto.
 
 ## Provenance
 
@@ -28,6 +28,8 @@ blocks:
   - { id: appointments, version: 2.4.0, variant: core,      source_commit: "...", customized: true }
   - { id: region-es,    version: 1.3.0, variant: region:es, source_commit: "...", customized: false }
 ```
+
+El manifest registra la **closure completa**: si `appointments` requiere `calendar` y `notifications`, esos dos también tienen entrada, porque también se copiaron. Y cada `id` aparece una sola vez. Sin esas dos reglas el manifest no puede responder qué versión tiene realmente el producto.
 
 Con los manifests de todos los productos, Mission Control puede saber qué productos usan cada bloque, detectar versiones antiguas, proponer upgrades, revisar seguridad y comparar cambios.
 
@@ -55,7 +57,7 @@ PR → revisión → aprobación
 actualiza foundation.manifest
 ```
 
-Si la entrada del manifest tiene `customized: true`, el upgrade siempre requiere revisión humana, aunque el CHANGELOG lo declare automático.
+Un upgrade `automático` significa que Mission Control puede llegar por su cuenta hasta el PR abierto y validado; revisar y fusionar sigue siendo humano. Si la entrada del manifest tiene `customized: true`, el upgrade es siempre manual, aunque el CHANGELOG lo declare automático.
 
 ## Compatibilidad entre bloques
 

@@ -21,7 +21,10 @@ No preguntamos "¿podemos reutilizar este código?". Preguntamos:
 
 Antes de promover una implementación a `draft`, responder **sí** a todos:
 
-1. **¿Existe en más de un producto, o probablemente existirá?**
+1. **¿Hay evidencia real de reutilización?** Vale una de dos:
+   - **Evidencia A**: el patrón ya apareció en **dos o más productos** (aunque con implementaciones distintas).
+   - **Evidencia B**: apareció una sola vez pero es claramente **infraestructura transversal** que cualquier producto serio necesitará (CI, retry, idempotencia, aislamiento de tenant, gestión de secretos).
+   "Probablemente existirá" no es evidencia. Si solo hay una intuición, el bloque se queda como `candidate` en el catálogo.
 2. **¿Representa una capacidad real**, no un fragmento de código conveniente?
 3. **¿Hay invariantes importantes** que merece la pena resolver una sola vez (seguridad, concurrencia, idempotencia, aislamiento)?
 4. **¿Puede parametrizarse** sin convertirse en un framework inmanejable?
@@ -53,12 +56,12 @@ Evitar el escenario contrario: seis meses construyendo Foundation sin productos 
 
 ## Cómo se promueve un bloque (procedimiento)
 
-1. **Candidato**: añadir o actualizar la entrada en [`registry/catalog.yaml`](../registry/catalog.yaml) con `status: candidate`, `origin` y `handoff_sections` o referencia al producto donde se identificó. Un PR pequeño.
+1. **Candidato**: añadir o actualizar la entrada en [`registry/catalog.yaml`](../registry/catalog.yaml) con `status: candidate`, `origin` y `handoff_sections` o referencia al producto donde se identificó. Un PR pequeño. Un candidato nunca se copia a un producto: si un producto necesita la capacidad ya, se construye allí y se extrae después.
 2. **Draft**: copiar [`blocks/_template/`](../blocks/_template/block.yaml) a `blocks/<id>/`, rellenar `block.yaml` (versión `0.x`), README, integration.md, tests y CHANGELOG; actualizar el catálogo con `status: draft`, `latest_version` y `path`. El PR incluye la evidencia de los siete criterios y, si la decisión es estructural, un ADR.
 3. **Stable**: versión `>=1.0.0`, tests independientes, guía de integración probada y al menos un producto con la entrada en su manifest.
 4. **Deprecated**: ADR con sustituto y plan de migración. Nunca se borra del catálogo.
 
-Todo cambio en Foundation entra por PR a `main` con revisión.
+Todo cambio en Foundation entra por PR a `main` con revisión, y `scripts/validate.py` debe pasar antes de abrirlo.
 
 ## Primer bloque previsto
 

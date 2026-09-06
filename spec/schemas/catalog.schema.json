@@ -5,44 +5,89 @@
   "description": "Catálogo de bloques conocidos por Foundation, incluidos los que todavía son candidatos. Ver spec/catalog.md.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["catalog_version", "families", "blocks"],
+  "required": [
+    "catalog_version",
+    "families",
+    "blocks"
+  ],
   "properties": {
-    "catalog_version": { "type": "integer", "const": 1 },
-    "updated_at": { "type": "string", "format": "date" },
+    "catalog_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date"
+    },
     "families": {
       "description": "Definición de cada familia permitida. Debe coincidir con el enum de block.schema.json.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "core", "capabilities", "providers", "patterns", "operational-safety",
-        "persistence", "platform", "regions", "templates", "testing"
+        "core",
+        "capabilities",
+        "providers",
+        "patterns",
+        "operational-safety",
+        "persistence",
+        "platform",
+        "regions",
+        "templates",
+        "testing"
       ],
       "properties": {
-        "core": { "$ref": "#/$defs/familyDef" },
-        "capabilities": { "$ref": "#/$defs/familyDef" },
-        "providers": { "$ref": "#/$defs/familyDef" },
-        "patterns": { "$ref": "#/$defs/familyDef" },
-        "operational-safety": { "$ref": "#/$defs/familyDef" },
-        "persistence": { "$ref": "#/$defs/familyDef" },
-        "platform": { "$ref": "#/$defs/familyDef" },
-        "regions": { "$ref": "#/$defs/familyDef" },
-        "templates": { "$ref": "#/$defs/familyDef" },
-        "testing": { "$ref": "#/$defs/familyDef" }
+        "core": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "providers": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "patterns": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "operational-safety": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "persistence": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "platform": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "regions": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "templates": {
+          "$ref": "#/$defs/familyDef"
+        },
+        "testing": {
+          "$ref": "#/$defs/familyDef"
+        }
       }
     },
     "blocks": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/catalogEntry" }
+      "items": {
+        "$ref": "#/$defs/catalogEntry"
+      }
     }
   },
   "$defs": {
     "familyDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["description"],
+      "required": [
+        "description"
+      ],
       "properties": {
-        "description": { "type": "string", "minLength": 1 }
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "blockId": {
@@ -53,31 +98,65 @@
       "description": "Entrada del catálogo. Es un subconjunto de block.yaml: lo necesario para que Mission Control descubra y seleccione. Un bloque candidate no tiene versión ni carpeta en blocks/.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "family", "status", "variant", "description", "default_for", "origin"],
+      "required": [
+        "id",
+        "name",
+        "family",
+        "status",
+        "variant",
+        "description",
+        "decision_mode",
+        "default_for",
+        "origin"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/blockId" },
-        "name": { "type": "string", "minLength": 1 },
+        "id": {
+          "$ref": "#/$defs/blockId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
         "family": {
           "type": "string",
           "enum": [
-            "core", "capabilities", "providers", "patterns", "operational-safety",
-            "persistence", "platform", "regions", "templates", "testing"
+            "core",
+            "capabilities",
+            "providers",
+            "patterns",
+            "operational-safety",
+            "persistence",
+            "platform",
+            "regions",
+            "templates",
+            "testing"
           ]
         },
         "status": {
           "type": "string",
-          "enum": ["candidate", "draft", "stable", "deprecated"]
+          "enum": [
+            "candidate",
+            "draft",
+            "stable",
+            "deprecated"
+          ]
         },
         "variant": {
           "type": "string",
           "pattern": "^(core|vertical:[a-z][a-z0-9-]*|region:[a-z]{2}(-[a-z0-9]+)*|region:global|region:eu)$"
         },
-        "extends": { "$ref": "#/$defs/blockId" },
-        "description": { "type": "string", "minLength": 1 },
+        "extends": {
+          "$ref": "#/$defs/blockId",
+          "description": "Obligatorio para toda variante vertical:* o region:* salvo region:global; prohibido en variant: core."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
         "latest_version": {
           "type": "string",
-          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
-          "description": "Solo presente cuando status es draft, stable o deprecated."
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Solo presente cuando status es draft (0.x), stable (>=1.0.0) o deprecated. SemVer 2.0.0 (expresión oficial de semver.org): sin ceros iniciales en identificadores numéricos de prerelease ni identificadores vacíos."
         },
         "path": {
           "type": "string",
@@ -86,7 +165,9 @@
         },
         "requires": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/blockId" },
+          "propertyNames": {
+            "$ref": "#/$defs/blockId"
+          },
           "additionalProperties": {
             "type": "string",
             "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?)*$"
@@ -95,40 +176,144 @@
         "providers": {
           "type": "array",
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "decision_mode": {
           "type": "string",
-          "enum": ["deterministic", "ai", "mixed"]
+          "enum": [
+            "deterministic",
+            "ai",
+            "mixed"
+          ],
+          "description": "Obligatorio: los candidatos no tienen block.yaml, así que el catálogo es la única fuente de este dato para Mission Control."
         },
         "default_for": {
           "type": "string",
-          "enum": ["all-products", "on-demand"]
+          "enum": [
+            "all-products",
+            "on-demand"
+          ]
         },
         "origin": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["product"],
+          "required": [
+            "product"
+          ],
           "properties": {
-            "product": { "type": "string", "minLength": 1 },
-            "date": { "type": "string", "format": "date" },
-            "notes": { "type": "string" }
+            "product": {
+              "type": "string",
+              "minLength": 1
+            },
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "notes": {
+              "type": "string"
+            }
           }
         },
         "handoff_sections": {
           "description": "Secciones del handoff (docs/00-handoff.md) donde se identificó el bloque. Trazabilidad, no autoridad.",
           "type": "array",
-          "items": { "type": "integer", "minimum": 1, "maximum": 47 }
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 47
+          }
         },
-        "notes": { "type": "string" }
+        "notes": {
+          "type": "string"
+        }
       },
       "allOf": [
         {
-          "if": { "properties": { "status": { "const": "candidate" } } },
-          "then": {
-            "not": { "anyOf": [ { "required": ["latest_version"] }, { "required": ["path"] } ] }
+          "if": {
+            "properties": {
+              "status": {
+                "const": "candidate"
+              }
+            }
           },
-          "else": { "required": ["latest_version", "path"] }
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "latest_version"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "latest_version",
+              "path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "draft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "latest_version": {
+                "pattern": "^0\\."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "stable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "latest_version": {
+                "pattern": "^[1-9]"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "variant": {
+                "pattern": "^(vertical:|region:(?!global$))"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "extends"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "extends"
+              ]
+            }
+          }
         }
       ]
     }

@@ -22,8 +22,8 @@ producto (con foundation.manifest actualizado)
 Lo que Mission Control debe hacer con Foundation, en orden ([ADR-0003](decisions/ADR-0003-seleccion-automatica-por-mission-control.md)):
 
 1. Inferir el perfil del producto (tipo, mercado, idioma, moneda, vertical).
-2. Identificar los bloques necesarios; incluir los `default_for: all-products`.
-3. Seleccionar versiones compatibles resolviendo `requires`.
+2. Identificar los bloques necesarios; incluir los `default_for: all-products` que tengan versión copiable. Un bloque `candidate` solo puede recomendarse, nunca copiarse ([`spec/catalog.md`](../spec/catalog.md#qué-puede-hacer-mission-control-con-cada-estado)).
+3. Seleccionar versiones compatibles resolviendo `requires` y copiar también cada dependencia, registrándola en el manifest (dependency closure).
 4. Seleccionar variantes vertical y regional.
 5. Copiar los bloques al repo del producto.
 6. Configurar la integración siguiendo cada `integration.md`.
