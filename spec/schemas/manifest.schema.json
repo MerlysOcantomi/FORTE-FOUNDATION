@@ -50,7 +50,7 @@
       "items": {
         "$ref": "#/$defs/blockEntry"
       },
-      "description": "Una entrada por bloque copiado. El id debe ser único dentro del manifest y toda dependencia declarada en requires por un bloque copiado debe tener su propia entrada (dependency closure). JSON Schema no puede expresar ninguna de las dos reglas: las comprueba scripts/validate.py y son normativas (spec/manifest.md)."
+      "description": "Una entrada por bloque copiado. Reglas que JSON Schema no puede expresar y comprueba scripts/validate.py: id único; variant igual al del catálogo; dependency closure (todo requires/extends de un bloque copiado tiene entrada); nunca un bloque candidate. Un bloque deprecated sigue siendo válido como copia existente mientras se prepara su migración."
     },
     "notes": {
       "type": "string"
@@ -63,8 +63,8 @@
     },
     "semver": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
-      "description": "SemVer 2.0.0 (expresión oficial de semver.org): sin ceros iniciales en identificadores numéricos de prerelease ni identificadores vacíos."
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "SemVer 2.0.0 (expresión oficial de semver.org) restringida a dígitos ASCII [0-9]: sin ceros iniciales en identificadores numéricos de prerelease, sin identificadores vacíos, sin dígitos Unicode."
     },
     "profile": {
       "type": "object",

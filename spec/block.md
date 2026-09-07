@@ -37,12 +37,12 @@ Solo existe carpeta cuando el bloque tiene implementación (`status` distinto de
 | `extends` | si variante | Id del bloque base que esta variante especializa. Obligatorio para toda `vertical:*` o `region:*` salvo `region:global`; prohibido en `core`. El schema lo exige. |
 | `requires` | no | Mapa `id → rango semver`. Compatibilidad entre bloques. |
 | `provides` | no | Capacidades o contratos que aporta. |
-| `providers` | no | Solo bloques de abstracción de provider: adapters disponibles. |
+| `providers` | si `family: providers` | Adapters disponibles. Obligatorio y no vacío cuando la familia es `providers`: una abstracción sin adapters no es copiable. |
 | `decision_mode` | sí | `deterministic`, `ai` o `mixed`. Ver abajo. |
 | `default_for` | sí | `all-products` o `on-demand`. |
 | `origin` | no | `product`, `date`, `notes`: dónde se resolvió por primera vez. |
-| `integration` | no | Ruta a la guía de integración. |
-| `tests` | no | Ruta a los tests o a su descripción. |
+| `integration` | en `stable` | Ruta a la guía de integración. Obligatoria en `stable` y debe existir. |
+| `tests` | en `stable` | Ruta a los tests o a su descripción. Obligatoria en `stable` y debe existir. |
 | `owners` | no | Responsables. |
 | `notes` | no | Texto libre. |
 
@@ -56,7 +56,7 @@ Semver aplicado al **contrato que el producto ve**, no a la implementación inte
 - `MINOR`: nueva capacidad compatible. Upgrade automático o asistido.
 - `MAJOR`: cambio de contrato, de schema o de invariantes. Upgrade asistido o manual, con migración documentada en el CHANGELOG.
 
-El schema liga versión y estado: `draft` exige `0.x`; `stable` exige `>=1.0.0`.
+El schema liga versión y estado: `draft` exige `0.x`; `stable` exige `>=1.0.0` con **precedencia SemVer real**: `1.0.0-rc.1` precede a `1.0.0` y por tanto no puede ser `stable`, mientras que `2.0.0-rc.1` sí puede. Solo se admiten dígitos ASCII. `scripts/validate.py` repite la comparación con una implementación SemVer completa.
 
 Cada entrada del CHANGELOG declara el tipo de upgrade. Ninguno de los tres elimina el PR ni la revisión humana en el producto ([ADR-0005](../docs/decisions/ADR-0005-versionado-semver-y-manifest.md)); lo que cambia es cuánto puede preparar Mission Control por su cuenta:
 
@@ -78,7 +78,7 @@ appointments-beauty     variant: vertical:beauty   extends: appointments
 appointments-es         variant: region:es         extends: appointments
 ```
 
-El producto combina `core + vertical + región + UX propia`. Una variante nunca sustituye al core: lo requiere. Toda variante declara `extends` (el schema lo obliga; `region:global` es la única raíz sin base) y, además, lista su base en `requires`.
+El producto combina `core + vertical + región + UX propia`. Una variante nunca sustituye al core: lo requiere. Toda variante declara `extends` (el schema lo obliga; `region:global` es la única raíz sin base) **y además lista su base en `requires` con un rango de versión**: `extends` expresa composición, `requires` expresa compatibilidad y es lo que Mission Control usa para elegir versión. `scripts/validate.py` rechaza un `extends` ausente de `requires`, tanto en `block.yaml` como en el catálogo.
 
 ## `decision_mode`
 
@@ -104,3 +104,4 @@ La selección **de** bloques es tarea de Mission Control (IA); los invariantes *
 3. No contiene secretos ni valores de configuración de un producto concreto; solo nombres de variables.
 4. Documenta qué puede personalizar el producto sin perder la posibilidad de upgrade.
 5. Su `id` no cambia nunca; un cambio de identidad es un bloque nuevo y el antiguo pasa a `deprecated`.
+6. Su `block.yaml` no diverge del catálogo en los campos de selección (`id`, `family`, `variant`, `extends`, `requires`, `status`, `version`, `decision_mode`, `default_for`, `providers`). Mission Control selecciona por el catálogo y copia el descriptor; `scripts/validate.py` rechaza cualquier drift entre ambos.

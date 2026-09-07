@@ -50,7 +50,7 @@
       "$ref": "#/$defs/variant"
     },
     "extends": {
-      "description": "Id del bloque base que esta variante especializa. Obligatorio para toda variante vertical:* o region:* salvo region:global.",
+      "description": "Id del bloque base que esta variante especializa. Obligatorio para toda variante vertical:* o region:* salvo region:global; prohibido en core. El bloque base debe aparecer también en requires con un rango de versión (lo comprueba scripts/validate.py).",
       "$ref": "#/$defs/blockId"
     },
     "requires": {
@@ -73,7 +73,7 @@
       }
     },
     "providers": {
-      "description": "Solo para bloques de abstracción de provider: adapters disponibles.",
+      "description": "Adapters disponibles. Obligatorio y no vacío cuando family es providers.",
       "type": "array",
       "uniqueItems": true,
       "items": {
@@ -91,12 +91,12 @@
       "$ref": "#/$defs/origin"
     },
     "integration": {
-      "description": "Ruta relativa al documento de integración del bloque.",
+      "description": "Ruta relativa al documento de integración del bloque. Obligatoria en stable; scripts/validate.py comprueba que existe.",
       "type": "string",
       "minLength": 1
     },
     "tests": {
-      "description": "Ruta relativa a los tests o a la descripción de cómo se prueba el bloque de forma independiente.",
+      "description": "Ruta relativa a los tests o a la descripción de cómo se prueba el bloque de forma independiente. Obligatoria en stable; scripts/validate.py comprueba que existe.",
       "type": "string",
       "minLength": 1
     },
@@ -120,13 +120,13 @@
     },
     "semver": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
-      "description": "SemVer 2.0.0 (expresión oficial de semver.org): sin ceros iniciales en identificadores numéricos de prerelease ni identificadores vacíos."
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "SemVer 2.0.0 (expresión oficial de semver.org) restringida a dígitos ASCII [0-9]: sin ceros iniciales en identificadores numéricos de prerelease, sin identificadores vacíos, sin dígitos Unicode."
     },
     "semverRange": {
       "type": "string",
-      "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?)*$",
-      "description": "Rango semver sencillo: >=2, ^3.1, ~1.4, >=2 <4, 2.x"
+      "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*|x|\\*))?(\\.(0|[1-9][0-9]*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*|x|\\*))?(\\.(0|[1-9][0-9]*|x|\\*))?)*$",
+      "description": "Rango semver sencillo con dígitos ASCII: >=2, ^3.1, ~1.4, >=2 <4, 2.x"
     },
     "family": {
       "type": "string",
@@ -260,9 +260,33 @@
         }
       },
       "then": {
+        "required": [
+          "integration",
+          "tests"
+        ],
         "properties": {
           "version": {
-            "pattern": "^[1-9]"
+            "pattern": "^(?!1\\.0\\.0-)[1-9]",
+            "description": "stable exige >= 1.0.0 con precedencia SemVer real: major >= 1 y nunca una prerelease de 1.0.0 (1.0.0-rc.1 precede a 1.0.0). scripts/validate.py repite la comprobación con una comparación SemVer completa."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "family": {
+            "const": "providers"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "providers"
+        ],
+        "properties": {
+          "providers": {
+            "minItems": 1
           }
         }
       }

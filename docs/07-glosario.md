@@ -20,7 +20,7 @@ Términos tal como se usan en este repositorio. Identificadores en inglés; expl
 | **`default_for`** | `all-products` (incluido por defecto en todo producto serio) u `on-demand` (según perfil). |
 | **Upgrade automático / asistido / manual** | Etiqueta de cada versión en el CHANGELOG que indica cuánto puede preparar Mission Control por su cuenta (rama, aplicación, tests, PR). Ninguno elimina la revisión humana ni el merge por PR. |
 | **Dependency closure** | Regla del manifest: si un bloque copiado declara `requires` o `extends`, cada uno de esos bloques tiene también su entrada, porque también se copió. |
-| **Copiable** | Un bloque solo puede copiarse a un producto si está en `draft` (experimental) o `stable`. Un `candidate` solo puede recomendarse. |
+| **Copiable** | Un bloque solo puede seleccionarse para una instalación nueva si está en `draft` (experimental) o `stable`. Un `candidate` solo puede recomendarse. Un `deprecated` no se selecciona para productos nuevos, pero una copia existente sigue siendo válida en su manifest mientras se migra. |
 | **Recovery** | Detectar operaciones que empezaron correctamente y quedaron interrumpidas, y continuarlas o reconciliar su estado sin duplicar trabajo. No es backup. |
 | **Idempotencia** | Propiedad por la que reejecutar una operación no duplica sus efectos. Base de Recovery, reminders e integraciones. |
 | **Lease** | Reserva temporal de un trabajo por un ejecutor para evitar que dos procesos lo hagan a la vez. |

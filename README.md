@@ -51,7 +51,8 @@ spec/
   block.md · manifest.md · catalog.md    especificaciones (normativas)
   schemas/                     JSON Schemas de block.yaml, manifest y catálogo
 registry/catalog.yaml          inventario vigente de bloques y su estado
-scripts/validate.py            validación de schemas, catálogo, manifests y enlaces
+scripts/validate.py            validación de schemas, catálogo, bloques, manifests y enlaces
+scripts/test_validate.py       pruebas del validador sobre copias temporales del repo
 blocks/
   README.md                    vacío por diseño
   _template/                   plantilla de bloque
@@ -71,12 +72,13 @@ La autoridad sobre cómo funciona Foundation es, en este orden: [`docs/decisions
 
 ## Validación
 
-Obligatoria antes de abrir un PR. Comprueba los schemas y las reglas que JSON Schema no puede expresar (ids únicos, referencias, `extends`, dependency closure de los manifests, estado copiable, enlaces entre documentos):
+Obligatoria antes de abrir un PR. Comprueba los schemas y las reglas que JSON Schema no puede expresar (claves YAML duplicadas, ids únicos, referencias, `extends` en `requires`, drift catálogo ↔ `block.yaml`, `path` canónico, candidatos sin directorio, artefactos de `stable`, precedencia SemVer real, dependency closure y variante de los manifests, estado copiable, enlaces entre documentos):
 
 ```bash
 pip install pyyaml jsonschema
 python3 scripts/validate.py                 # todo el repositorio
 python3 scripts/validate.py ruta/al/foundation.manifest.yaml   # un manifest de producto
+python3 -m unittest scripts/test_validate.py -v                # pruebas del validador (casos negativos y de aceptación)
 ```
 
 Todavía no hay workflow de CI en este repositorio: será la primera copia real del bloque `ci` aplicada a Foundation mismo.

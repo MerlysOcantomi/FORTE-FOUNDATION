@@ -70,17 +70,23 @@ El estado decide si un bloque puede **copiarse** a un producto. `default_for` so
 | `candidate` | **No, nunca.** | Recomendarlo, detectar que un producto lo necesita y proponer su extracción. Si un producto necesita la capacidad ya, se construye en el producto ([`docs/06-criterios-de-admision.md`](../docs/06-criterios-de-admision.md)). |
 | `draft` | Sí, experimentalmente, con aprobación explícita en el PR del producto. | Copiarlo señalando que el contrato puede cambiar. |
 | `stable` | Sí. | Seleccionarlo normalmente; los `default_for: all-products` entran por defecto. |
-| `deprecated` | No para productos nuevos. | Mantener las copias existentes y proponer la migración al sustituto indicado en su ADR. |
+| `deprecated` | **No para una instalación nueva.** Una copia ya existente sigue siendo válida en su manifest mientras se prepara la migración. | Mantener las copias existentes y proponer la migración al sustituto indicado en su ADR. |
 
-`scripts/validate.py` rechaza cualquier manifest que registre un bloque `candidate` o `deprecated` (los manifests de `examples/` quedan exentos porque ilustran un estado futuro).
+Dos preguntas distintas: **"¿puede Mission Control seleccionarlo para un producto nuevo?"** (solo `draft` y `stable`) y **"¿es válido en el manifest de un producto que ya lo tiene?"** (`draft`, `stable` y `deprecated`). `scripts/validate.py` aplica la segunda: rechaza un `candidate` en cualquier manifest y acepta un `deprecated` como copia existente. La prohibición de seleccionar `deprecated` pertenece a la lógica de selección nueva, no a la validación histórica. Los manifests de `examples/` quedan exentos de la regla de estado porque ilustran un estado futuro.
 
 ## Reglas de integridad
 
 1. `id` único en todo el catálogo.
 2. Todo `requires` y todo `extends` apunta a un `id` existente en el catálogo.
 3. Toda variante (`vertical:*`, `region:*`) declara `extends`; la única excepción es `region:global`, raíz de la familia `regions`. Un bloque `core` no puede declararlo. El schema lo exige.
-4. Un `candidate` no tiene `latest_version` ni `path`; cualquier otro estado tiene ambos, y `path` apunta a una carpeta con `block.yaml`.
-5. `decision_mode` es obligatorio en toda entrada: los candidatos no tienen `block.yaml`, así que el catálogo es la única fuente de ese dato.
-6. `family` pertenece a la lista de familias definida en el propio catálogo y en el schema. Añadir una familia requiere ADR y cambio en los tres schemas.
+4. Un `candidate` no tiene `latest_version`, `path` **ni directorio en `blocks/`**: cualquier archivo bajo `blocks/<id>/` para un candidato es implementación invisible y se rechaza.
+5. Cualquier otro estado tiene `latest_version` y `path`, y `path` es exactamente `blocks/<id>` con un `block.yaml` cuyo `id` coincide. Todo directorio de `blocks/` (salvo `_template`) corresponde a una entrada no candidate.
+6. Todo `extends` aparece también en `requires` con un rango de versión.
+7. `decision_mode` es obligatorio en toda entrada: los candidatos no tienen `block.yaml`, así que el catálogo es la única fuente de ese dato.
+8. Un bloque implementado de la familia `providers` declara al menos un adapter en `providers`.
+9. `stable` exige `latest_version >= 1.0.0` con precedencia SemVer real (`1.0.0-rc.1` no vale). Solo dígitos ASCII.
+10. La entrada del catálogo y el `block.yaml` del bloque no divergen en los campos de selección (ver [`block.md`](block.md#invariantes-que-todo-bloque-debe-cumplir)).
+11. `family` pertenece a la lista de familias definida en el propio catálogo y en el schema. Añadir una familia requiere ADR y cambio en los tres schemas.
+12. Un archivo YAML con claves duplicadas es inválido; el validador no deja que la última ocurrencia sobrescriba en silencio a la anterior.
 
-Las reglas 1 a 4 que el schema no puede expresar las comprueba `scripts/validate.py`; ejecutarlo es obligatorio antes de abrir un PR (ver README).
+Las reglas que el schema no puede expresar las comprueba `scripts/validate.py`; ejecutarlo es obligatorio antes de abrir un PR (ver README). Sus pruebas viven en `scripts/test_validate.py`.

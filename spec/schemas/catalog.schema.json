@@ -147,7 +147,7 @@
         },
         "extends": {
           "$ref": "#/$defs/blockId",
-          "description": "Obligatorio para toda variante vertical:* o region:* salvo region:global; prohibido en variant: core."
+          "description": "Obligatorio para toda variante vertical:* o region:* salvo region:global; prohibido en variant: core. El bloque base debe aparecer también en requires (lo comprueba scripts/validate.py)."
         },
         "description": {
           "type": "string",
@@ -155,13 +155,13 @@
         },
         "latest_version": {
           "type": "string",
-          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
-          "description": "Solo presente cuando status es draft (0.x), stable (>=1.0.0) o deprecated. SemVer 2.0.0 (expresión oficial de semver.org): sin ceros iniciales en identificadores numéricos de prerelease ni identificadores vacíos."
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Solo presente cuando status es draft (0.x), stable (>= 1.0.0 real) o deprecated. SemVer 2.0.0 (expresión oficial de semver.org) restringida a dígitos ASCII [0-9]: sin ceros iniciales en identificadores numéricos de prerelease, sin identificadores vacíos, sin dígitos Unicode."
         },
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Carpeta del bloque dentro de blocks/. Solo presente cuando existe implementación."
+          "description": "Carpeta del bloque. Solo presente cuando existe implementación y debe ser exactamente blocks/<id> (lo comprueba scripts/validate.py)."
         },
         "requires": {
           "type": "object",
@@ -170,7 +170,7 @@
           },
           "additionalProperties": {
             "type": "string",
-            "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*|x|\\*))?(\\.(0|[1-9]\\d*|x|\\*))?)*$"
+            "pattern": "^(\\^|~|>=|>|<=|<|=)?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*|x|\\*))?(\\.(0|[1-9][0-9]*|x|\\*))?( +(\\^|~|>=|>|<=|<|=)?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*|x|\\*))?(\\.(0|[1-9][0-9]*|x|\\*))?)*$"
           }
         },
         "providers": {
@@ -179,7 +179,8 @@
           "items": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "description": "Adapters disponibles. Obligatorio y no vacío en bloques implementados de la familia providers."
         },
         "decision_mode": {
           "type": "string",
@@ -289,7 +290,8 @@
           "then": {
             "properties": {
               "latest_version": {
-                "pattern": "^[1-9]"
+                "pattern": "^(?!1\\.0\\.0-)[1-9]",
+                "description": "stable exige >= 1.0.0 con precedencia SemVer real: major >= 1 y nunca una prerelease de 1.0.0 (1.0.0-rc.1 precede a 1.0.0). scripts/validate.py repite la comprobación con una comparación SemVer completa."
               }
             }
           }
@@ -312,6 +314,34 @@
               "required": [
                 "extends"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "providers"
+              },
+              "status": {
+                "not": {
+                  "const": "candidate"
+                }
+              }
+            },
+            "required": [
+              "family",
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "providers"
+            ],
+            "properties": {
+              "providers": {
+                "minItems": 1
+              }
             }
           }
         }
