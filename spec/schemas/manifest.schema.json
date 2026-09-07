@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MerlysOcantomi/FORTE-FOUNDATION/spec/schemas/manifest.schema.json",
+  "title": "foundation.manifest (por producto)",
+  "description": "Registro de procedencia que vive en el repo de cada producto: qué bloques de Foundation se copiaron, en qué versión y desde qué commit. Ver spec/manifest.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "product",
+    "repo",
+    "profile",
+    "blocks"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Versión del formato del manifest. Permite evolucionar el formato sin romper productos."
+    },
+    "product": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9]*(-[a-z0-9]+)*$",
+      "description": "Identificador del producto en kebab-case, p. ej. finesse, forte-mission-control."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repositorio del producto, p. ej. MerlysOcantomi/FINESSE."
+    },
+    "profile": {
+      "$ref": "#/$defs/profile"
+    },
+    "foundation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Referencia al repositorio Foundation desde el que se copiaron los bloques.",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "catalog_commit": {
+          "$ref": "#/$defs/commitSha"
+        }
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/blockEntry"
+      },
+      "description": "Una entrada por bloque copiado. Reglas que JSON Schema no puede expresar y comprueba scripts/validate.py: id único; variant igual al del catálogo; dependency closure (todo requires/extends de un bloque copiado tiene entrada); nunca un bloque candidate. Un bloque deprecated sigue siendo válido como copia existente mientras se prepara su migración."
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "SemVer 2.0.0 (expresión oficial de semver.org) restringida a dígitos ASCII [0-9]: sin ceros iniciales en identificadores numéricos de prerelease, sin identificadores vacíos, sin dígitos Unicode."
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "market",
+        "locale",
+        "currency"
+      ],
+      "description": "Perfil del producto que Mission Control usa para inferir bloques y variantes (§5, §20 del handoff).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "saas",
+            "platform",
+            "vertical",
+            "internal-tool",
+            "portal",
+            "agent"
+          ]
+        },
+        "market": {
+          "type": "string",
+          "pattern": "^([A-Z]{2}|GLOBAL|EU)$",
+          "description": "País/mercado principal: código ISO 3166-1 alpha-2 en mayúsculas (ES, CH, DE, US), EU o GLOBAL. Es independiente del idioma."
+        },
+        "locale": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Idioma/locale principal (es, es-ES, de-CH). Independiente del mercado."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "Moneda principal ISO 4217 (EUR, CHF, USD)."
+        },
+        "vertical": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Vertical/sector si aplica (beauty, legal, ...)."
+        },
+        "platform": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Plataforma sobre la que se construye si es un vertical (p. ej. 7f para Finesse)."
+        }
+      }
+    },
+    "blockEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "variant",
+        "copied_at",
+        "source_commit",
+        "customized"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "variant": {
+          "type": "string",
+          "pattern": "^(core|vertical:[a-z][a-z0-9-]*|region:[a-z]{2}(-[a-z0-9]+)*|region:global|region:eu)$"
+        },
+        "copied_at": {
+          "type": "string",
+          "format": "date",
+          "description": "Fecha en la que el bloque se copió/generó en el producto."
+        },
+        "source_commit": {
+          "$ref": "#/$defs/commitSha",
+          "description": "Commit de Foundation desde el que se copió el bloque."
+        },
+        "customized": {
+          "type": "boolean",
+          "description": "true si el producto modificó la copia. Mission Control lo usa para saber qué upgrades requieren revisión manual."
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Ruta dentro del repo del producto donde vive la copia."
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
